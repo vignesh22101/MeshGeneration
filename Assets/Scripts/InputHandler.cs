@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
@@ -8,31 +6,41 @@ public class InputHandler : MonoBehaviour
     #region Variables
 
     [SerializeField] private LineRenderer lineRenderer;
+    [SerializeField] private Material polygonMaterial;
 
-    private Polygon recentPolygon;
+    private Polygon recentPolygon, copiedPolygon;
     private Camera mainCamera;
 
     #endregion
 
     private void Awake()
     {
-        mainCamera = Camera.main;   
+        mainCamera = Camera.main;
     }
 
     private void Update()
     {
-        if (Input.GetMouseButtonDown(0) && EventSystem.current.currentSelectedGameObject==null)
+        if (Input.GetMouseButtonDown(0) && EventSystem.current.currentSelectedGameObject == null)
         {
-            if (recentPolygon == null)
-                recentPolygon = new GameObject().AddComponent<Polygon>();
+            if (copiedPolygon != null)
+            {
+                copiedPolygon.moveWithMouse = false;
+                recentPolygon = copiedPolygon = null;
+            }
 
-            Vector3 mousePos = Input.mousePosition;
-            mousePos.z = 1;
-            Vector3 worldPos = mainCamera.ScreenToWorldPoint(mousePos);
-            recentPolygon.AddVertice(worldPos);
+            if (copiedPolygon == null)
+            {
+                if (recentPolygon == null)
+                    recentPolygon = new GameObject().AddComponent<Polygon>();
 
-            lineRenderer.positionCount++;
-            lineRenderer.SetPosition(lineRenderer.positionCount-1,worldPos);
+                Vector3 mousePos = Input.mousePosition;
+                mousePos.z = 1;
+                Vector3 worldPos = mainCamera.ScreenToWorldPoint(mousePos);
+                recentPolygon.AddVertice(worldPos);
+
+                lineRenderer.positionCount++;
+                lineRenderer.SetPosition(lineRenderer.positionCount - 1, worldPos);
+            }
         }
     }
 
@@ -41,12 +49,14 @@ public class InputHandler : MonoBehaviour
     public void Clicked_CompleteButton()
     {
         if (recentPolygon != null)
-            recentPolygon.ConstructPolygon();
+            recentPolygon.ConstructPolygon(polygonMaterial);
     }
 
     public void Clicked_CopyButton()
     {
-        new Polygon();
+        copiedPolygon = Instantiate(recentPolygon.gameObject).GetComponent<Polygon>();
+        copiedPolygon.moveWithMouse = true;
+        lineRenderer.positionCount = 0;
     }
 
     #endregion
